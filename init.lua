@@ -3,17 +3,21 @@ require('packer').startup(function(use)
     use "easymotion/vim-easymotion"
     use "github/copilot.vim"
     use "wbthomason/packer.nvim"
-    --use "" -- exuberant-ctags
+    use "preservim/tagbar" -- exuberant-ctags
 end)
 
 require("nvim-treesitter.configs").setup({
     ensure_installed = {"lua"}, --parsers
+    indent = {enable = true},
+    highlight = {enable = true}, --"I get query error: invalid node type at position" paragraph. Syntax highlighting 
 })
 
 -- config centered on github copilot
 local options = {
+    filetype = "on", --turned on filetype detection
     foldmethod = "expr",
     foldexpr = "nvim_treesitter#foldexpr()",
+    foldnestmax = 1,
     clipboard = vim.opt.clipboard + "unnamedplus" + "unnamed",
     expandtab = true,
     hlsearch = false,
@@ -32,6 +36,12 @@ local options = {
 for k, v in pairs(options) do
     vim.opt[k] = v
 end
+local globals = {
+    tagbar_show_linenumbers = 2, -- show relative line numbers in tagbar window
+}
+for k, v in pairs(globals) do
+    vim.g[k] = v
+end
 
 -- partiallly accept GitHub copilot suggestion, word by word
 local function partiallyAccept()
@@ -48,17 +58,17 @@ local function smartIndent()
 end
 -- TODO indent mode
 local keymaps = { -- :h modes
-{"nv", "<leader>p", '"+p', {noremap=true}},
-{"nv", "<leader>y", '"+y', {noremap=true}},
-{"nv", "c", '"_c', {noremap=true}},
-{"nv", "d", '"_d', {noremap=true}},
-{"nv", "x", '"_x', {noremap=true}},
-{"i", "<c-l>", partiallyAccept, {expr=true}},
-{"n", "<c-f>", smartIndent, {}},
-{"nov", "F" , "<Plug>(easymotion-Fl)", {}},
-{"nov", "T" , "<Plug>(easymotion-Tl)", {}},
-{"nov", "t" , "<Plug>(easymotion-tl)", {}},
-{"nov", "f" , "<Plug>(easymotion-fl)", {}},
+    {"nv", "<leader>p", '"+p', {noremap=true}},
+    {"nv", "<leader>y", '"+y', {noremap=true}},
+    {"nv", "c", '"_c', {noremap=true}},
+    {"nv", "d", '"_d', {noremap=true}},
+    {"nv", "x", '"_x', {noremap=true}},
+    {"i", "<c-l>", partiallyAccept, {expr=true}},
+    {"n", "<c-f>", smartIndent, {}},
+    {"nov", "F" , "<Plug>(easymotion-Fl)", {}},
+    {"nov", "T" , "<Plug>(easymotion-Tl)", {}},
+    {"nov", "t" , "<Plug>(easymotion-tl)", {}},
+    {"nov", "f" , "<Plug>(easymotion-fl)", {}},
 }
 
 local function keymap(modes, key, value, opts)
@@ -70,4 +80,11 @@ end
 
 for _, v in pairs(keymaps) do
     keymap(unpack(v))
+end
+local autocmds = {
+    {{"VimEnter"}, {pattern = "*", command=":TagbarOpen"}},
+    {{"CursorHoldI"}, {pattern = "*", command=":TagbarForceUpdate"}},
+}
+for _, v in pairs(autocmds) do
+    vim.api.nvim_create_autocmd(unpack(v))
 end
